@@ -1,0 +1,10 @@
+all: build
+
+build:
+	gcc -o test -pthread test.c
+
+docker-build: build
+	docker build -t pthread-docker:latest .
+
+docker-run: docker-build
+	docker run --rm -ti pthread-docker:latest
