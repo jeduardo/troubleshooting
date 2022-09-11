@@ -12,8 +12,16 @@ void *worker() {
 int main (int argc, char **argv) {
 
   pthread_t threadId;
+  pthread_attr_t threadAttr;
+  int err = -1;
 
-  int err = pthread_create(&threadId, NULL, &worker, NULL);
+  err = pthread_attr_init(&threadAttr);
+  if (err != 0) {
+    perror("Unable to init thread attributes");
+    return EXIT_FAILURE;
+  }
+  
+  err = pthread_create(&threadId, &threadAttr, &worker, NULL);
   if (err != 0) {
     perror("Unable to create thread");
     return EXIT_FAILURE;
