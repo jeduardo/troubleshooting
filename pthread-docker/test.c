@@ -1,3 +1,5 @@
+#include <bits/types/struct_sched_param.h>
+#include <errno.h>
 #include <sched.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -5,7 +7,32 @@
 #include <unistd.h>
 
 void *worker() {
+  struct sched_param sp;
+  int err;
+
   printf("Running worker thread...\n");
+
+  // Setting scheduling parameter
+  // https://man7.org/linux/man-pages/man7/sched.7.html
+  sp.sched_priority = 50;
+
+  // This works only with root, otherside there will be an EPERM
+  err = pthread_setschedparam(pthread_self(), SCHED_RR, &sp);
+  if (err) {
+    switch (err) {
+      case EPERM:
+        printf("EPERM\n");
+        break;
+      case EINVAL:
+        printf("EINVAL\n");
+        break;
+      case ESRCH:
+        printf("ESRCH\n");
+        break;
+    }
+    perror("Unable to set scheduling priority within thread");
+  }
+
   sleep(5);
   printf("Worker thread completed\n");
 }
@@ -23,7 +50,8 @@ int main (int argc, char **argv) {
     perror("Unable to init thread attributes");
     return EXIT_FAILURE;
   }
-  
+ 
+  // SCHED_RR does not work here because I am not setting a priority
   err = pthread_attr_setschedpolicy(&threadAttr, SCHED_OTHER);
   if (err) {
     perror("Unable to set thread priority");
