@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 
-# Random script created to troubleshoot https://github.com/saltstack/salt/issues/47984
-
-# Heavily inspired from https://github.com/pyca/pyopenssl/blob/master/tests/test_crypto.py
-
 from OpenSSL.crypto import (
     X509Store,
     X509StoreFlags,
