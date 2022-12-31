@@ -12,6 +12,13 @@ SIZE=28
 FOUND=1
 OPTIMAL_MTU=$START_MTU
 
+trap cancel INT
+
+function cancel() {
+  echo "Cancelling"
+  exit 1
+}
+
 while (($FOUND > 0)); do
   PAYLOAD_SIZE=$(($OPTIMAL_MTU - $SIZE))
   if (($PAYLOAD_SIZE <= 0)); then
