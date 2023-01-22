@@ -46,7 +46,6 @@ while (($FOUND > 0)); do
   if (($FOUND > 0)); then
     let "OPTIMAL_MTU-=1"
   fi
-  exit 0
 done
 
 echo "Optimal MTU size is $OPTIMAL_MTU"
