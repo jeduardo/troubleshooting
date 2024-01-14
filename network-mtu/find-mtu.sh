@@ -6,13 +6,15 @@ TARGET=8.8.8.8
 START_MTU=1500
 # Timeout (seconds)
 TIMEOUT=1
-# Packet header - 20 bytes TCP header + 8 bytes ICMP header
-SIZE=28
+# ICMP header: 8 bytes for both IPv4 and IPv6.
+ICMP_HEADER=8
 # Preferred protocol
 PROTO='4'
+IP_HEADER=20
 
 if [ ! -z "$1" ] && [ "$1" == '-6' ]; then
   PROTO='6'
+  IP_HEADER=40
 fi
 if [ ! -z "$1" ] && [ "$1" != '-4' ] && [ "$1" != '-6' ]; then
   TARGET=$1
@@ -24,6 +26,8 @@ fi
 
 FOUND=1
 OPTIMAL_MTU=$START_MTU
+IF=$(ip -${PROTO} route | grep default | cut -d ' ' -f 5)
+
 
 trap cancel INT
 
@@ -32,9 +36,10 @@ function cancel() {
   exit 1
 }
 
-echo "Target is ${TARGET}/IPv${PROTO}"
+echo "Target is ${TARGET}/IPv${PROTO} over interface ${IF}"
 
 while (($FOUND > 0)); do
+  SIZE=$(($ICMP_HEADER + $IP_HEADER))
   PAYLOAD_SIZE=$(($OPTIMAL_MTU - $SIZE))
   if (($PAYLOAD_SIZE <= 0)); then
     echo "Limit exceeded, something is wrong"
