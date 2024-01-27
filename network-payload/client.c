@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
     memset(buffer + 2 * payload_size, 'c', payload_size);
 
     // Send payload
-    n = write(sockfd, buffer, 3 * payload_size);
+    n = write(sockfd, buffer, payload_size);
     if (n < 0) error("ERROR writing to socket");
     printf("-> %d bytes sent\n", n);
     ;
