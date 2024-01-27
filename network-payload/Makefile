@@ -18,5 +18,8 @@ server_debug: server.c
 client_debug: client.c
 		$(CC) $(CFLAGS) $(DEBUGFLAGS) client.c -o client
 
+debug_run: dev
+	gdb ./client -ex "run localhost 4000 1364"
+
 clean:
 	rm -f server client
