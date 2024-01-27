@@ -31,6 +31,7 @@ int main(int argc, char *argv[]) {
     bzero((char *)&serv_addr, sizeof(serv_addr));
     portno = atoi(argv[1]);
     payload_size = 3 * atoi(argv[2]);
+    printf("# Payload size chosen: %d\n", payload_size);
     buffer = calloc(payload_size, sizeof(char));
 
     serv_addr.sin_family = AF_INET;

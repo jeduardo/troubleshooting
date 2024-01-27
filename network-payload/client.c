@@ -25,6 +25,7 @@ int main(int argc, char *argv[]) {
 
     portno = atoi(argv[2]);
     payload_size = 3 * atoi(argv[3]);
+    printf("# Payload size chosen: %d\n", payload_size);
 
     buffer = calloc(payload_size, sizeof(char));
 
