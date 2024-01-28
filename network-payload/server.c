@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
     int sockfd, newsockfd, portno;
     socklen_t clilen;  // Changed type to socklen_t
     struct sockaddr_in serv_addr, cli_addr;
-    int n, payload_size, opt;
+    int n, payload_size, opt, buf_size;
     char *buffer;
 
     if (argc < 3) {
@@ -30,8 +30,10 @@ int main(int argc, char *argv[]) {
 
     bzero((char *)&serv_addr, sizeof(serv_addr));
     portno = atoi(argv[1]);
-    payload_size = 3 * atoi(argv[2]);
+    payload_size = atoi(argv[2]);
+    buf_size = 3 * payload_size;
     printf("# Payload size chosen: %d\n", payload_size);
+    printf("# Buffer size calculated: %d\n", buf_size);
     buffer = calloc(payload_size, sizeof(char));
 
     serv_addr.sin_family = AF_INET;
@@ -49,12 +51,12 @@ int main(int argc, char *argv[]) {
         if (newsockfd < 0) error("ERROR on accept");
         printf("# New connection\n");
 
-        bzero(buffer, payload_size);
-        n = read(newsockfd, buffer, payload_size);
+        bzero(buffer, buf_size);
+        n = read(newsockfd, buffer, buf_size);
         if (n < 0) error("ERROR reading from socket");
         printf("<- %d bytes read\n", n);
 
-        n = write(newsockfd, buffer, payload_size);
+        n = write(newsockfd, buffer, buf_size);
         if (n < 0) error("ERROR writing to socket");
         printf("-> %d bytes written\n", n);
 

@@ -13,7 +13,7 @@ void error(const char *msg) {
 }
 
 int main(int argc, char *argv[]) {
-    int sockfd, portno, n, payload_size;
+    int sockfd, portno, n, payload_size, buf_size;
     struct sockaddr_in serv_addr;
     struct hostent *server;
     char *buffer;
@@ -24,10 +24,13 @@ int main(int argc, char *argv[]) {
     }
 
     portno = atoi(argv[2]);
-    payload_size = 3 * atoi(argv[3]);
-    printf("# Payload size chosen: %d\n", payload_size);
+    payload_size = atoi(argv[3]);
+    buf_size = 3 * payload_size;
 
-    buffer = calloc(payload_size, sizeof(char));
+    printf("# Payload size chosen: %d\n", payload_size);
+    printf("# Buffer size calculated: %d\n", buf_size);
+
+    buffer = calloc(buf_size, sizeof(char));
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) error("ERROR opening socket");
@@ -53,13 +56,13 @@ int main(int argc, char *argv[]) {
     memset(buffer + 2 * payload_size, 'c', payload_size);
 
     // Send payload
-    n = write(sockfd, buffer, payload_size);
+    n = write(sockfd, buffer, buf_size);
     if (n < 0) error("ERROR writing to socket");
     printf("-> %d bytes sent\n", n);
-    ;
+
     // Receive response
-    bzero(buffer, payload_size);
-    n = read(sockfd, buffer, payload_size);
+    bzero(buffer, buf_size);
+    n = read(sockfd, buffer, buf_size);
     if (n < 0) error("ERROR reading from socket");
     printf("Received: %s\n", buffer);
     printf("<- %d bytes received\n", n);
