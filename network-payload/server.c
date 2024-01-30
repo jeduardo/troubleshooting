@@ -1,19 +1,29 @@
 #include <netinet/in.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
+int sockfd;
+
 void error(const char *msg) {
     perror(msg);
-    exit(1);
+    exit(EXIT_FAILURE);
+}
+
+void sigint_handler(int sig) {
+    printf("Caught signal %d, closing socket and exiting...\n", sig);
+    close(sockfd);
+    exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char *argv[]) {
+    struct sigaction sa;
     int sockfd, newsockfd, portno;
     socklen_t clilen;  // Changed type to socklen_t
-    struct sockaddr_in serv_addr, cli_addr;
+    struct sockaddr_in6 serv_addr, cli_addr;
     int n, payload_size, opt, buf_size;
     char *buffer;
 
@@ -22,12 +32,23 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    sa.sa_handler = sigint_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    if (sigaction(SIGINT, &sa, NULL) == -1) {
+        error("Error setting up signal handler");
+    }
+
+    sockfd = socket(AF_INET6, SOCK_STREAM, 0);
     if (sockfd < 0) error("ERROR opening socket");
 
     opt = 1;
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-        error("ERROR on setsockopt");
+        error("ERROR on setting SO_REUSEADDR");
+
+    opt = 0;
+    if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_V6ONLY, &opt, sizeof(opt)) < 0)
+        error("ERROR on setting IPV6_V6ONLY");
 
     bzero((char *)&serv_addr, sizeof(serv_addr));
     portno = atoi(argv[1]);
@@ -37,9 +58,9 @@ int main(int argc, char *argv[]) {
     printf("# Buffer size calculated: %d\n", buf_size);
     buffer = calloc(payload_size, sizeof(char));
 
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_addr.s_addr = INADDR_ANY;
-    serv_addr.sin_port = htons(portno);
+    serv_addr.sin6_family = AF_INET6;
+    serv_addr.sin6_addr = in6addr_any;
+    serv_addr.sin6_port = htons(portno);
 
     if (bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
         error("ERROR on binding");
