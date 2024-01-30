@@ -13,9 +13,8 @@ void error(const char *msg) {
 }
 
 int main(int argc, char *argv[]) {
-    int sockfd, portno, n, payload_size, buf_size;
-    struct sockaddr_in serv_addr;
-    struct hostent *server;
+    int sockfd, n, payload_size, buf_size;
+    struct addrinfo hints, *servinfo, *p;
     char *buffer;
 
     if (argc < 4) {
@@ -23,7 +22,6 @@ int main(int argc, char *argv[]) {
         exit(0);
     }
 
-    portno = atoi(argv[2]);
     payload_size = atoi(argv[3]);
     buf_size = 3 * payload_size;
 
@@ -32,23 +30,35 @@ int main(int argc, char *argv[]) {
 
     buffer = calloc(buf_size, sizeof(char));
 
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0) error("ERROR opening socket");
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_UNSPEC;  // anny addr
+    hints.ai_socktype = SOCK_STREAM;
 
-    server = gethostbyname(argv[1]);
-    if (server == NULL) {
-        fprintf(stderr, "ERROR, no such host\n");
-        exit(0);
+    if (getaddrinfo(argv[1], argv[2], &hints, &servinfo) != 0)
+        error("getaddrinfo");
+
+    for (p = servinfo; p != NULL; p = p->ai_next) {
+        sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+        if (sockfd == -1) {
+            perror("socket");
+            continue;
+        }
+
+        if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+            close(sockfd);
+            perror("connect");
+            continue;
+        }
+
+        break;  // if we get here, we must have connected successfully
     }
 
-    bzero((char *)&serv_addr, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    bcopy((char *)server->h_addr, (char *)&serv_addr.sin_addr.s_addr,
-          server->h_length);
-    serv_addr.sin_port = htons(portno);
+    if (p == NULL) {
+        fprintf(stderr, "client: failed to connect\n");
+        return EXIT_FAILURE;
+    }
 
-    if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-        error("ERROR connecting");
+    freeaddrinfo(servinfo);
 
     // Prepare payload
     memset(buffer, 'a', payload_size);
