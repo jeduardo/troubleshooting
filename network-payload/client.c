@@ -13,20 +13,20 @@ void error(const char *msg) {
 }
 
 int main(int argc, char *argv[]) {
-    int sockfd, n, payload_size, buf_size;
+    int sockfd, n, base_size, buf_size;
     struct addrinfo hints, *servinfo, *p;
     char *buffer;
 
     if (argc < 4) {
-        fprintf(stderr, "usage %s hostname port payload_size\n", argv[0]);
+        fprintf(stderr, "usage %s hostname port base_size\n", argv[0]);
         exit(0);
     }
 
-    payload_size = atoi(argv[3]);
-    buf_size = 3 * payload_size;
+    base_size = atoi(argv[3]);
+    buf_size = 3 * base_size;
 
-    printf("# Payload size chosen: %d\n", payload_size);
-    printf("# Buffer size calculated: %d\n", buf_size);
+    printf("# Base size: %d\n", base_size);
+    printf("# Payload size: %d\n", buf_size);
 
     buffer = calloc(buf_size, sizeof(char));
 
@@ -61,9 +61,9 @@ int main(int argc, char *argv[]) {
     freeaddrinfo(servinfo);
 
     // Prepare payload
-    memset(buffer, 'a', payload_size);
-    memset(buffer + payload_size, 'b', payload_size);
-    memset(buffer + 2 * payload_size, 'c', payload_size);
+    memset(buffer, 'a', base_size);
+    memset(buffer + base_size, 'b', base_size);
+    memset(buffer + 2 * base_size, 'c', base_size);
 
     // Send payload
     n = write(sockfd, buffer, buf_size);
