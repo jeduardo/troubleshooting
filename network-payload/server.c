@@ -77,6 +77,8 @@ int main(int argc, char *argv[]) {
         n = read(newsockfd, buffer, buf_size);
         if (n < 0) error("ERROR reading from socket");
         printf("<- %d bytes read\n", n);
+        if (n < buf_size)
+            printf("W: Read %d bytes when %d where expected!", n, buf_size);
 
         n = write(newsockfd, buffer, n);
         if (n < 0) error("ERROR writing to socket");
