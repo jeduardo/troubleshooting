@@ -2,6 +2,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <strings.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -84,6 +85,7 @@ int main(int argc, char *argv[]) {
             count += n;
         }
         printf("I: Total bytes read: %d\n", count);
+        printf("I: Recv buffer content length: %ld\n", strlen(buffer));
 
         n = write(newsockfd, buffer, count);
         if (n < 0) error("ERROR writing to socket");

@@ -88,6 +88,9 @@ int main(int argc, char *argv[]) {
 
     close(sockfd);
 
+    printf("Send buffer content length: %ld\n", strlen(buf_send));
+    printf("Recv buffer content length: %ld\n", strlen(buf_recv));
+
     if (strcmp(buf_send, buf_recv) == 0) {
         printf("I: Return payload is valid!\n");
         return EXIT_SUCCESS;
