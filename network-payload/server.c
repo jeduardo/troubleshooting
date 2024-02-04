@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
     int sockfd, newsockfd, portno;
     socklen_t clilen;  // Changed type to socklen_t
     struct sockaddr_in6 serv_addr, cli_addr;
-    int n, base_size, opt, buf_size;
+    int n, base_size, opt, buf_size, count;
     char *buffer;
 
     if (argc < 3) {
@@ -73,14 +73,19 @@ int main(int argc, char *argv[]) {
         if (newsockfd < 0) error("ERROR on accept");
         printf("# New connection\n");
 
+        count = 0;
         bzero(buffer, buf_size);
-        n = read(newsockfd, buffer, buf_size);
-        if (n < 0) error("ERROR reading from socket");
-        printf("<- %d bytes read\n", n);
-        if (n < buf_size)
-            printf("W: Read %d bytes when %d where expected!", n, buf_size);
 
-        n = write(newsockfd, buffer, n);
+        while ((buf_size - count) > 0) {
+            n = read(newsockfd, buffer + count, buf_size - count);
+            if (n < 0) error("ERROR reading from socket");
+            printf("<- %d bytes read\n", n);
+            if (n == 0) break;  // EOF
+            count += n;
+        }
+        printf("I: Total bytes read: %d\n", count);
+
+        n = write(newsockfd, buffer, count);
         if (n < 0) error("ERROR writing to socket");
         printf("-> %d bytes written\n", n);
 

@@ -10,13 +10,13 @@
 
 void error(const char *msg) {
     perror(msg);
-    exit(0);
+    exit(EXIT_FAILURE);
 }
 
 int main(int argc, char *argv[]) {
-    int sockfd, n, base_size, buf_size;
+    int sockfd, n, base_size, buf_size, count;
     struct addrinfo hints, *servinfo, *p;
-    char *buffer;
+    char *buf_send, *buf_recv;
 
     if (argc < 4) {
         fprintf(stderr, "usage %s hostname port base_size\n", argv[0]);
@@ -29,7 +29,8 @@ int main(int argc, char *argv[]) {
     printf("# Base size: %d\n", base_size);
     printf("# Payload size: %d\n", buf_size);
 
-    buffer = calloc(buf_size, sizeof(char));
+    buf_send = calloc(buf_size, sizeof(char));
+    buf_recv = calloc(buf_size, sizeof(char));
 
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_UNSPEC;  // anny addr
@@ -62,24 +63,38 @@ int main(int argc, char *argv[]) {
     freeaddrinfo(servinfo);
 
     // Prepare payload
-    memset(buffer, 'a', base_size);
-    memset(buffer + base_size, 'b', base_size);
-    memset(buffer + 2 * base_size, 'c', base_size);
+    memset(buf_send, 'a', base_size);
+    memset(buf_send + base_size, 'b', base_size);
+    memset(buf_send + 2 * base_size, 'c', base_size);
 
     // Send payload
-    n = write(sockfd, buffer, buf_size);
+    n = write(sockfd, buf_send, buf_size);
     if (n < 0) error("ERROR writing to socket");
     printf("-> %d bytes sent\n", n);
 
     // Receive response
-    bzero(buffer, buf_size);
-    n = read(sockfd, buffer, buf_size);
-    if (n < 0) error("ERROR reading from socket");
-    printf("Received: %s\n", buffer);
-    printf("<- %d bytes received\n", n);
+    count = 0;
+    bzero(buf_recv, buf_size);
+
+    while ((buf_size - count) > 0) {
+        n = read(sockfd, buf_recv + count, buf_size);
+        if (n < 0) error("ERROR reading from socket");
+        printf("<- %d bytes received\n", n);
+        count += n;
+        if (n == 0) break;
+    }
+
+    printf("I: Total bytes received: %d\n", count);
 
     close(sockfd);
 
-    return 0;
+    if (strcmp(buf_send, buf_recv) == 0) {
+        printf("I: Return payload is valid!\n");
+        return EXIT_SUCCESS;
+    } else {
+        printf("I: Return payload is NOT valid\n");
+    }
+
+    return EXIT_FAILURE;
 }
 
