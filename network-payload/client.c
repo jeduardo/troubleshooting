@@ -14,7 +14,7 @@ void error(const char *msg) {
 }
 
 int main(int argc, char *argv[]) {
-    int sockfd, n, base_size, buf_size, count;
+    int sockfd, n, base_size, buf_size, count, ret;
     struct addrinfo hints, *servinfo, *p;
     char *buf_send, *buf_recv;
 
@@ -88,16 +88,19 @@ int main(int argc, char *argv[]) {
 
     close(sockfd);
 
-    printf("Send buffer content length: %ld\n", strlen(buf_send));
-    printf("Recv buffer content length: %ld\n", strlen(buf_recv));
-
-    if (strcmp(buf_send, buf_recv) == 0) {
-        printf("I: Return payload is valid!\n");
-        return EXIT_SUCCESS;
-    } else {
-        printf("I: Return payload is NOT valid\n");
+    ret = EXIT_SUCCESS;
+    for (count = 0; count < buf_size; count++) {
+        if (buf_send[count] != buf_recv[count]) {
+            printf("E: Received payload different on byte %d\n", count);
+            ret = EXIT_FAILURE;
+            break;
+        }
     }
+    printf("I: Received payload matches sent payload\n");
 
-    return EXIT_FAILURE;
+    free(buf_send);
+    free(buf_recv);
+
+    return ret;
 }
 
