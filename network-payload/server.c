@@ -55,9 +55,11 @@ int main(int argc, char *argv[]) {
     portno = atoi(argv[1]);
     base_size = atoi(argv[2]);
     buf_size = 3 * base_size;
+
     printf("# Base size: %d\n", base_size);
     printf("# Payload size: %d\n", buf_size);
-    buffer = calloc(base_size, sizeof(char));
+
+    buffer = calloc(buf_size, sizeof(char));
 
     serv_addr.sin6_family = AF_INET6;
     serv_addr.sin6_addr = in6addr_any;
@@ -85,7 +87,6 @@ int main(int argc, char *argv[]) {
             count += n;
         }
         printf("I: Total bytes read: %d\n", count);
-        printf("I: Recv buffer content length: %ld\n", strlen(buffer));
 
         n = write(newsockfd, buffer, count);
         if (n < 0) error("ERROR writing to socket");
