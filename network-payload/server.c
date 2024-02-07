@@ -1,4 +1,5 @@
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,15 +24,17 @@ void sigint_handler(int sig) {
 int main(int argc, char *argv[]) {
     struct sigaction sa;
     int sockfd, newsockfd, portno;
-    socklen_t clilen;  // Changed type to socklen_t
+    socklen_t len;
     struct sockaddr_in6 serv_addr, cli_addr;
-    int n, base_size, opt, buf_size, count;
+    int n, base_size, opt, buf_size, count, mss = 0;
     char *buffer;
 
     if (argc < 3) {
-        fprintf(stderr, "ERROR, no port or base_size provided\n");
-        exit(1);
+        fprintf(stderr, "Usage: port base_size [mss]\n");
+        exit(EXIT_FAILURE);
     }
+
+    if (argc > 3) mss = atoi(argv[3]);
 
     sa.sa_handler = sigint_handler;
     sigemptyset(&sa.sa_mask);
@@ -51,6 +54,10 @@ int main(int argc, char *argv[]) {
     if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_V6ONLY, &opt, sizeof(opt)) < 0)
         error("ERROR on setting IPV6_V6ONLY");
 
+    if (mss > 0)
+        if (setsockopt(sockfd, IPPROTO_TCP, TCP_MAXSEG, &mss, sizeof(mss)) < 0)
+            error("setsockopt TCP_MAXSEG failed");
+
     bzero((char *)&serv_addr, sizeof(serv_addr));
     portno = atoi(argv[1]);
     base_size = atoi(argv[2]);
@@ -69,12 +76,17 @@ int main(int argc, char *argv[]) {
         error("ERROR on binding");
 
     listen(sockfd, 5);
-    clilen = sizeof(cli_addr);
+    len = sizeof(cli_addr);
 
     while (1) {
-        newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
+        newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &len);
         if (newsockfd < 0) error("ERROR on accept");
         printf("# New connection\n");
+
+        len = sizeof(mss);
+        if (getsockopt(sockfd, IPPROTO_TCP, TCP_MAXSEG, &mss, &len) < 0)
+            error("getsockopt TCP_MAXSEG failed");
+        printf("# MSS is %d\n", mss);
 
         count = 0;
         bzero(buffer, buf_size);
@@ -86,7 +98,7 @@ int main(int argc, char *argv[]) {
             if (n == 0) break;  // EOF
             count += n;
         }
-        printf("I: Total bytes read: %d\n", count);
+        printf("# Total bytes read: %d\n", count);
 
         n = write(newsockfd, buffer, count);
         if (n < 0) error("ERROR writing to socket");

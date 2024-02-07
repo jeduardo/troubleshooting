@@ -1,5 +1,6 @@
 #include <netdb.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,14 +15,17 @@ void error(const char *msg) {
 }
 
 int main(int argc, char *argv[]) {
-    int sockfd, n, base_size, buf_size, count, ret;
+    int sockfd, n, base_size, buf_size, count, ret, mss = 0;
+    socklen_t len;
     struct addrinfo hints, *servinfo, *p;
     char *buf_send, *buf_recv;
 
     if (argc < 4) {
-        fprintf(stderr, "usage %s hostname port base_size\n", argv[0]);
-        exit(0);
+        fprintf(stderr, "Usage: %s hostname port base_size [mss]\n", argv[0]);
+        exit(EXIT_FAILURE);
     }
+
+    if (argc > 4) mss = atoi(argv[4]);
 
     base_size = atoi(argv[3]);
     buf_size = 3 * base_size;
@@ -46,6 +50,11 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
+        if (mss > 0)
+            if (setsockopt(sockfd, IPPROTO_TCP, TCP_MAXSEG, &mss, sizeof(mss)) <
+                0)
+                error("setsockopt TCP_MAXSEG failed");
+
         if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
             close(sockfd);
             perror("connect");
@@ -61,6 +70,11 @@ int main(int argc, char *argv[]) {
     }
 
     freeaddrinfo(servinfo);
+
+    len = sizeof(mss);
+    if (getsockopt(sockfd, IPPROTO_TCP, TCP_MAXSEG, &mss, &len) < 0)
+        error("getsockopt TCP_MAXSEG failed");
+    printf("# MSS is %d\n", mss);
 
     // Prepare payload
     memset(buf_send, 'a', base_size);
@@ -84,7 +98,7 @@ int main(int argc, char *argv[]) {
         if (n == 0) break;
     }
 
-    printf("I: Total bytes received: %d\n", count);
+    printf("# Total bytes received: %d\n", count);
 
     close(sockfd);
 
@@ -96,7 +110,7 @@ int main(int argc, char *argv[]) {
             break;
         }
     }
-    printf("I: Received payload matches sent payload\n");
+    printf("# Received payload matches sent payload\n");
 
     free(buf_send);
     free(buf_recv);
