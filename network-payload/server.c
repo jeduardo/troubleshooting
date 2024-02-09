@@ -39,9 +39,8 @@ int main(int argc, char *argv[]) {
     sa.sa_handler = sigint_handler;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = 0;
-    if (sigaction(SIGINT, &sa, NULL) == -1) {
+    if (sigaction(SIGINT, &sa, NULL) == -1)
         error("Error setting up signal handler");
-    }
 
     sockfd = socket(AF_INET6, SOCK_STREAM, 0);
     if (sockfd < 0) error("ERROR opening socket");
